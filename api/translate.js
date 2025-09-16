@@ -1,6 +1,6 @@
 // api/translate.js — Vercel Serverless Function (Node 18+)
 
-export default async function handler(req, res) {
+  export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "POST only" });
   }
@@ -17,21 +17,21 @@ export default async function handler(req, res) {
 
   try {
     // OpenAI Responses API
-    const r = await fetch("https://api.openai.com/v1/responses", {
+    const r = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        model: "gpt-4.1-mini",
-        input: [
-          { role: "system", content: system || defaultSystem() },
-          { role: "user",   content: JSON.stringify({ text, theme, court }) }
-        ],
-        max_output_tokens: 400,
-        temperature: theme === "riddle" ? 0.7 : 0.6
-      })
+  body: JSON.stringify({
+    model: "gpt-4o-mini",
+    messages: [
+      { role: "system", content: system || defaultSystem() },
+      { role: "user", content: JSON.stringify({ text, theme, court }) }
+    ],
+    max_tokens: 400,
+    temperature: theme === "riddle" ? 0.7 : 0.6
+  })
     });
 
     if (!r.ok) {
