@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feywild Campaign Tools - D&D 5E</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./css/styles.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'fey-purple': '#8B5CF6',
+                        'fey-green': '#10B981',
+                        'fey-gold': '#F59E0B',
+                        'fey-dark': '#1F2937',
+                        'fey-light': '#F3F4F6'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-purple-900 via-green-800 to-purple-800 min-h-screen">
+    <!-- Header -->
+    <header class="bg-black bg-opacity-30 backdrop-blur-sm border-b border-fey-gold border-opacity-30">
+        <div class="container mx-auto px-4 py-6">
+            <h1 class="text-4xl md:text-6xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-fey-gold via-fey-green to-fey-purple">
+                Feywild Campaign Tools
+            </h1>
+            <p class="text-center text-fey-light mt-2 text-lg">
+                Magical tools for your D&D 5E Feywild adventures
+            </p>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="bg-black bg-opacity-20 backdrop-blur-sm sticky top-0 z-50">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-center space-x-1 md:space-x-4 py-4">
+                <button onclick="showSection('name-generator')" 
+                        class="nav-btn px-3 md:px-6 py-2 rounded-lg font-semibold transition-all duration-300 text-sm md:text-base">
+                    Fey Names
+                </button>
+                <button onclick="showSection('dialogue-translator')" 
+                        class="nav-btn px-3 md:px-6 py-2 rounded-lg font-semibold transition-all duration-300 text-sm md:text-base">
+                    Dialogue Translator
+                </button>
+                <button onclick="showSection('effect-table')" 
+                        class="nav-btn px-3 md:px-6 py-2 rounded-lg font-semibold transition-all duration-300 text-sm md:text-base">
+                    Fey Effects
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        
+        <!-- Fey Name Generator Section -->
+        <section id="name-generator" class="tool-section">
+            <div class="bg-black bg-opacity-40 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-fey-gold border-opacity-30">
+                <h2 class="text-3xl md:text-4xl font-bold text-fey-gold mb-6 text-center">
+                    Fey Name Generator
+                </h2>
+                
+                <div class="grid md:grid-cols-2 gap-6 mb-8">
+                    <!-- Court Selection -->
+                    <div class="space-y-4">
+                        <h3 class="text-xl font-semibold text-fey-light">Choose Court</h3>
+                        <div class="flex space-x-4">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input
+type="radio"
+name="court"
+value="seelie"
+checked
+class="w-4 h-4 text-fey-gold focus:ring-fey-gold"
+>
+                                <span class="text-fey-light">Seelie (Summer)</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input
+type="radio"
+name="court"
+value="unseelie"
+class="w-4 h-4 text-fey-purple focus:ring-fey-purple"
+>
+                                <span class="text-fey-light">Unseelie (Winter)</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Species Selection -->
+                    <div class="space-y-4">
+                        <h3 class="text-xl font-semibold text-fey-light">Choose Species</h3>
+                        <select id="species-select" class="w-full p-3 rounded-lg bg-black bg-opacity-50 text-fey-light border border-fey-gold border-opacity-30 focus:border-fey-gold focus:ring-2 focus:ring-fey-gold focus:ring-opacity-50">
+                            <option value="pixies">Pixies</option>
+                            <option value="sprites">Sprites</option>
+                            <option value="dryads">Dryads</option>
+                            <option value="satyrs">Satyrs</option>
+                            <option value="eladrin">Eladrin</option>
+                            <option value="centaurs">Centaurs</option>
+                            <option value="faerie_dragons">Faerie Dragons</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="text-center mb-6">
+                    <button onclick="generateName()" 
+                            class="bg-gradient-to-r from-fey-gold to-fey-green hover:from-fey-green hover:to-fey-gold text-white font-bold py-3 px-8 rounded-lg transform hover:scale-105 transition-all duration-300 shadow-lg">
+                        Generate Fey Name
+                    </button>
+                </div>
+                
+                <div id="generated-name" class="text-center">
+                    <div class="bg-black bg-opacity-30 rounded-lg p-6 border border-fey-purple border-opacity-30">
+                        <p class="text-fey-light mb-2">Generated Name:</p>
+                        <p id="name-result" class="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-fey-gold to-fey-green">
+                            Click "Generate Fey Name" to begin
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dialogue Translator Section -->
+        <section id="dialogue-translator" class="tool-section hidden">
+            <div class="bg-black bg-opacity-40 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-fey-green border-opacity-30">
+                <h2 class="text-3xl md:text-4xl font-bold text-fey-green mb-6 text-center">
+                    Fey Dialogue Translator
+                </h2>
+                
+                <div class="grid md:grid-cols-2 gap-6 mb-6">
+                    <!-- Translation Type -->
+                    <div class="space-y-4">
+                        <h3 class="text-xl font-semibold text-fey-light">Translation Style</h3>
+                        <div class="flex space-x-4">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input
+type="radio"
+name="translation-type"
+value="rhyme"
+checked
+class="w-4 h-4 text-fey-green focus:ring-fey-green"
+>
+                                <span class="text-fey-light">Rhyming</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input
+type="radio"
+name="translation-type"
+value="riddle"
+class="w-4 h-4 text-fey-purple focus:ring-fey-purple"
+>
+                                <span class="text-fey-light">Riddle</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Court Style -->
+                    <div class="space-y-4">
+                        <h3 class="text-xl font-semibold text-fey-light">Court Style</h3>
+                        <div class="flex space-x-4">
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input
+type="radio"
+name="court-style"
+value="seelie"
+checked
+class="w-4 h-4 text-fey-gold focus:ring-fey-gold"
+>
+                                <span class="text-fey-light">Seelie</span>
+                            </label>
+                            <label class="flex items-center space-x-2 cursor-pointer">
+                                <input
+type="radio"
+name="court-style"
+value="unseelie"
+class="w-4 h-4 text-fey-purple focus:ring-fey-purple"
+>
+                                <span class="text-fey-light">Unseelie</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="space-y-4 mb-6">
+                    <label for="input-text" class="block text-xl font-semibold text-fey-light">
+                        Enter text to translate:
+                    </label>
+                    <textarea
+id="input-text"
+rows="4"
+class="w-full p-4 rounded-lg bg-black bg-opacity-50 text-fey-light border border-fey-green border-opacity-30 focus:border-fey-green focus:ring-2 focus:ring-fey-green focus:ring-opacity-50 resize-none"
+placeholder="Enter your dialogue here..."
+></textarea>
+                </div>
+                
+                <div class="text-center mb-6">
+                    <button onclick="translateDialogue()" 
+                            class="bg-gradient-to-r from-fey-green to-fey-purple hover:from-fey-purple hover:to-fey-green text-white font-bold py-3 px-8 rounded-lg transform hover:scale-105 transition-all duration-300 shadow-lg">
+                        Translate to Fey Speech
+                    </button>
+                </div>
+                
+                <div id="translated-text" class="hidden">
+                    <div class="bg-black bg-opacity-30 rounded-lg p-6 border border-fey-green border-opacity-30">
+                        <p class="text-fey-light mb-4 text-lg font-semibold">Fey Translation:</p>
+                        <p id="translation-result" class="text-lg md:text-xl text-fey-light leading-relaxed italic"></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Fun Fey Effect Table Section -->
+        <section id="effect-table" class="tool-section hidden">
+            <div class="bg-black bg-opacity-40 backdrop-blur-sm rounded-2xl p-6 md:p-8 border border-fey-purple border-opacity-30">
+                <h2 class="text-3xl md:text-4xl font-bold text-fey-purple mb-6 text-center">
+                    Fun Fey Effect Table
+                </h2>
+                
+                <div class="grid md:grid-cols-3 gap-4 mb-8">
+                    <div class="text-center">
+                        <h3 class="text-lg font-semibold text-fey-light mb-2">Effect Type</h3>
+                        <select id="effect-type" class="w-full p-3 rounded-lg bg-black bg-opacity-50 text-fey-light border border-fey-purple border-opacity-30 focus:border-fey-purple focus:ring-2 focus:ring-fey-purple focus:ring-opacity-50">
+                            <option value="all">All Effects</option>
+                            <option value="beneficial">Beneficial</option>
+                            <option value="neutral">Neutral</option>
+                            <option value="challenging">Challenging</option>
+                            <option value="archfey_effects">Archfey Effects</option>
+                        </select>
+                    </div>
+                    
+                    <div class="text-center">
+                        <h3 class="text-lg font-semibold text-fey-light mb-2">Number of Effects</h3>
+                        <select id="effect-count" class="w-full p-3 rounded-lg bg-black bg-opacity-50 text-fey-light border border-fey-purple border-opacity-30 focus:border-fey-purple focus:ring-2 focus:ring-fey-purple focus:ring-opacity-50">
+                            <option value="1">1 Effect</option>
+                            <option value="2">2 Effects</option>
+                            <option value="3">3 Effects</option>
+                        </select>
+                    </div>
+                    
+                    <div class="text-center flex items-end">
+                        <button onclick="generateEffect()" 
+                                class="w-full bg-gradient-to-r from-fey-purple to-fey-gold hover:from-fey-gold hover:to-fey-purple text-white font-bold py-3 px-6 rounded-lg transform hover:scale-105 transition-all duration-300 shadow-lg">
+                            Roll for Effect
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="effect-results" class="space-y-4">
+                    <div class="bg-black bg-opacity-30 rounded-lg p-6 border border-fey-purple border-opacity-30 text-center">
+                        <p class="text-fey-light text-lg">
+                            Click "Roll for Effect" to discover what magical chaos awaits!
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-black bg-opacity-30 backdrop-blur-sm border-t border-fey-gold border-opacity-30 mt-12">
+        <div class="container mx-auto px-4 py-6 text-center">
+            <p class="text-fey-light">
+                Created for D&D 5E Feywild campaigns • Based on official D&D lore and community resources
+            </p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Files -->
+    <script src="./js/nameGenerator.js"></script>
+    <script src="./js/dialogueTranslator.js"></script>
+    <script src="./js/feyEffects.js"></script>
+    <script src="./js/main.js"></script>
+</body>
+</html>
