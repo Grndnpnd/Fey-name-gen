@@ -1,7 +1,7 @@
-// Fey Effects Table - Enhanced with Dice Roll Support
+// Fey Effects Table - Enhanced with Dice Roll Table Generation
 // Based on data from ./data/effects/fey_effects.js
 // Specifications from ./data/feature_specifications.md
-// Enhanced with D&D 5e 2024 compliant effects and dice roll functionality
+// Enhanced with D&D 5e 2024 compliant effects and dice roll table functionality
 
 // Use external fey effects data loaded from ../data/effects/fey_effects.js
 // If external data is not available, use fallback data
@@ -115,20 +115,20 @@ const effectsData = (typeof feyEffects !== 'undefined') ? feyEffects : {
  * Initialize the fey effects functionality
  */
 window.initializeFeyEffects = function() {
-    const rollButton = document.getElementById('roll-effects');
+    const generateButton = document.getElementById('roll-effects');
     const resultDiv = document.getElementById('effects-result');
     
-    if (rollButton && resultDiv) {
-        rollButton.addEventListener('click', function() {
-            rollFeyEffects();
+    if (generateButton && resultDiv) {
+        generateButton.addEventListener('click', function() {
+            generateEffectsTable();
         });
     }
 };
 
 /**
- * Roll fey effects based on selected type, dice type, and count
+ * Generate a dice roll table based on selected parameters
  */
-function rollFeyEffects() {
+function generateEffectsTable() {
     try {
         const resultDiv = document.getElementById('effects-result');
         window.showLoading(resultDiv);
@@ -141,180 +141,136 @@ function rollFeyEffects() {
         const diceTypeSelect = document.getElementById('dice-type');
         const selectedDiceType = diceTypeSelect.value;
         
-        // Get selected effect count
-        const effectCountSelect = document.getElementById('effect-count');
-        const selectedCount = parseInt(effectCountSelect.value);
+        // Get the number of rows based on dice type
+        const diceMax = {
+            'd4': 4,
+            'd6': 6,
+            'd10': 10
+        };
         
-        // Generate effects based on dice type
-        let effects = [];
-        let rollResults = [];
+        const numRows = diceMax[selectedDiceType];
         
-        if (selectedDiceType === 'random') {
-            // Use existing random generation
-            effects = getMultipleEffects(selectedCount, selectedType);
-        } else {
-            // Use dice roll generation
-            for (let i = 0; i < selectedCount; i++) {
-                const rollResult = rollDiceForEffect(selectedDiceType, selectedType);
-                effects.push(rollResult);
-                rollResults.push(rollResult.diceRoll);
-            }
-        }
+        // Get effects for the table
+        const effects = getEffectsForTable(selectedType, numRows);
         
-        // Display results with animation delay
+        // Display table with animation delay
         setTimeout(() => {
-            const resultHTML = generateEffectsHTML(effects, selectedType, selectedDiceType, rollResults);
-            window.displayResult(resultDiv, resultHTML);
-        }, 1200);
+            const tableHTML = generateTableHTML(effects, selectedType, selectedDiceType, numRows);
+            window.displayResult(resultDiv, tableHTML);
+        }, 800);
         
     } catch (error) {
-        window.handleError(error, document.getElementById('effects-result'), 'Failed to roll effects. Please try again.');
+        window.handleError(error, document.getElementById('effects-result'), 'Failed to generate effects table. Please try again.');
     }
 }
 
 /**
- * Get random effect by category using external data
+ * Get a list of effects for the table
  */
-function getRandomEffect(category = 'all') {
+function getEffectsForTable(category, count) {
+    let sourceEffects = [];
+    
     if (category === 'all') {
-        const allEffects = [
+        sourceEffects = [
             ...effectsData.beneficial.map(effect => ({text: effect, category: 'beneficial'})),
             ...effectsData.neutral.map(effect => ({text: effect, category: 'neutral'})),
             ...effectsData.challenging.map(effect => ({text: effect, category: 'challenging'})),
             ...effectsData.archfey.map(effect => ({text: effect, category: 'archfey'}))
         ];
-        return allEffects[Math.floor(Math.random() * allEffects.length)];
-    }
-    
-    const categoryEffects = effectsData[category];
-    if (categoryEffects) {
-        const effect = categoryEffects[Math.floor(Math.random() * categoryEffects.length)];
-        return {text: effect, category: category};
-    }
-    
-    return {text: "No effect occurs.", category: 'neutral'};
-}
-
-/**
- * Get multiple random effects without duplicates
- */
-function getMultipleEffects(count = 1, category = 'all') {
-    const effects = [];
-    const usedEffects = new Set();
-    
-    let attempts = 0;
-    const maxAttempts = 100; // Prevent infinite loop
-    
-    while (effects.length < count && attempts < maxAttempts) {
-        const effect = getRandomEffect(category);
-        
-        if (!usedEffects.has(effect.text)) {
-            effects.push(effect);
-            usedEffects.add(effect.text);
-        }
-        
-        attempts++;
-    }
-    
-    return effects;
-}
-
-/**
- * Roll dice for effect using external data with dice roll tables
- */
-function rollDiceForEffect(diceType, category) {
-    const diceMax = {
-        'd4': 4,
-        'd6': 6,
-        'd10': 10
-    };
-    
-    const rollResult = Math.floor(Math.random() * diceMax[diceType]) + 1;
-    
-    let effect;
-    let effectCategory = category;
-    
-    // Use dice roll tables if available in external data
-    if (effectsData.diceRollTables && effectsData.diceRollTables[diceType]) {
-        if (category === 'all') {
-            const categories = ['beneficial', 'neutral', 'challenging', 'archfey'];
-            effectCategory = categories[Math.floor(Math.random() * categories.length)];
-        }
-        
-        const diceTable = effectsData.diceRollTables[diceType][effectCategory];
-        if (diceTable && diceTable.length > 0) {
-            const index = Math.max(0, Math.min(rollResult - 1, diceTable.length - 1));
-            effect = diceTable[index];
-        } else {
-            // Fallback to regular effects
-            const categoryEffects = effectsData[effectCategory];
-            if (categoryEffects && categoryEffects.length > 0) {
-                const index = (rollResult - 1) % categoryEffects.length;
-                effect = categoryEffects[index];
-            } else {
-                effect = "No effect occurs.";
-            }
-        }
     } else {
-        // Fallback to regular effects if dice tables not available
-        if (category === 'all') {
-            const categories = ['beneficial', 'neutral', 'challenging', 'archfey'];
-            effectCategory = categories[Math.floor(Math.random() * categories.length)];
-        }
-        
-        const categoryEffects = effectsData[effectCategory];
-        if (categoryEffects && categoryEffects.length > 0) {
-            const index = (rollResult - 1) % categoryEffects.length;
-            effect = categoryEffects[index];
-        } else {
-            effect = "No effect occurs.";
-        }
+        const categoryEffects = effectsData[category] || [];
+        sourceEffects = categoryEffects.map(effect => ({text: effect, category: category}));
     }
     
-    return {
-        diceRoll: rollResult,
-        diceType: diceType,
-        text: effect,
-        category: effectCategory
-    };
+    // Shuffle the effects to get random selection
+    const shuffled = [...sourceEffects].sort(() => 0.5 - Math.random());
+    
+    // Take the required number of effects
+    const selectedEffects = shuffled.slice(0, count);
+    
+    // If we don't have enough effects, fill with repeats
+    while (selectedEffects.length < count && sourceEffects.length > 0) {
+        const randomEffect = sourceEffects[Math.floor(Math.random() * sourceEffects.length)];
+        selectedEffects.push(randomEffect);
+    }
+    
+    return selectedEffects.slice(0, count);
 }
 
 /**
- * Generate HTML for displaying effects with dice roll support
+ * Generate HTML for the dice roll table
  */
-function generateEffectsHTML(effects, selectedType, diceType = 'random', rollResults = []) {
-    const effectsHTML = effects.map((effect, index) => {
-        const diceRollDisplay = diceType !== 'random' && effect.diceRoll 
-            ? `<div class="dice-roll text-yellow-400 text-sm mb-1">🎲 ${effect.diceType.toUpperCase()}: ${effect.diceRoll}</div>`
+function generateTableHTML(effects, selectedType, diceType, numRows) {
+    const typeText = selectedType === 'all' ? 'Mixed' : formatEffectCategory(selectedType);
+    
+    const tableRows = effects.map((effect, index) => {
+        const rollNumber = index + 1;
+        const categoryBadge = selectedType === 'all' 
+            ? `<span class="inline-block px-2 py-1 text-xs rounded-full bg-${getCategoryColor(effect.category)}-500 bg-opacity-20 text-${getCategoryColor(effect.category)}-300 mr-2">${formatEffectCategory(effect.category)}</span>`
             : '';
-            
+        
         return `
-            <div class="effect-item mb-4">
-                ${diceRollDisplay}
-                <div class="effect-category ${effect.category} mb-2">
-                    ${formatEffectCategory(effect.category)} Effect
-                </div>
-                <div class="effect-text text-gray-300">
-                    ${effect.text}
-                </div>
-            </div>
+            <tr class="border-b border-purple-500 border-opacity-20">
+                <td class="py-3 px-4 text-center font-bold text-purple-300 text-lg">
+                    ${rollNumber}
+                </td>
+                <td class="py-3 px-4 text-gray-300">
+                    ${categoryBadge}${effect.text}
+                </td>
+            </tr>
         `;
     }).join('');
     
-    const typeText = selectedType === 'all' ? 'Mixed' : formatEffectCategory(selectedType);
-    const countText = effects.length === 1 ? '1 Effect' : `${effects.length} Effects`;
-    const methodText = diceType !== 'random' ? `${diceType.toUpperCase()} Roll` : 'Random';
-    
     return `
         <div class="bg-black bg-opacity-50 rounded-lg p-6 border border-purple-500 border-opacity-30">
-            <div class="generated-effects">
-                <div class="text-purple-300 text-lg font-semibold mb-4 text-center">
-                    ${countText} • ${typeText} • ${methodText}
-                </div>
-                ${effectsHTML}
+            <div class="text-center mb-6">
+                <h3 class="text-purple-300 text-xl font-bold mb-2">
+                    ${diceType.toUpperCase()} ${typeText} Effects Table
+                </h3>
+                <p class="text-gray-400 text-sm">
+                    Roll a ${diceType} and find the corresponding effect below
+                </p>
+            </div>
+            
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b-2 border-purple-500 border-opacity-40">
+                            <th class="py-3 px-4 text-left text-purple-300 font-semibold w-16">
+                                ${diceType.toUpperCase()}
+                            </th>
+                            <th class="py-3 px-4 text-left text-purple-300 font-semibold">
+                                Effect
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-4 text-center">
+                <button onclick="generateEffectsTable()" 
+                        class="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105">
+                    Generate New Table
+                </button>
             </div>
         </div>
     `;
+}
+
+/**
+ * Get color class for effect category
+ */
+function getCategoryColor(category) {
+    const colorMap = {
+        'beneficial': 'green',
+        'neutral': 'yellow',
+        'challenging': 'red',
+        'archfey': 'purple'
+    };
+    return colorMap[category] || 'gray';
 }
 
 /**
