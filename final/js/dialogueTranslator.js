@@ -2,6 +2,14 @@
 // Based on data from ./data/dialogue/transformation_rules.js
 // Specifications from ./data/feature_specifications.md
 // Enhanced with OpenAI GPT API for improved dialogue translation
+// === GPT CONFIG (hardcoded key) ===
+const USE_OPENAI = true;
+
+// 👇 Replace with your real key
+const OPENAI_KEY = "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";
+
+const OPENAI_ENDPOINT = "https://api.openai.com/v1/responses";
+const OPENAI_MODEL    = "gpt-4.1-mini"; // good cost/quality balance
 
 // OpenAI API Configuration (Mock Implementation)
 const OPENAI_CONFIG = {
@@ -12,6 +20,57 @@ const OPENAI_CONFIG = {
     MAX_TOKENS: 150,
     TEMPERATURE: 0.8
 };
+
+async function callOpenAI(text, style, court) {
+  if (!OPENAI_KEY) throw new Error("Missing hardcoded API key");
+
+  const system = [
+    "You rewrite user text for a D&D Feywild tool.",
+    "Preserve original meaning and facts. No extra exposition.",
+    "Styles:",
+    "- style='rhyming': write readable couplets/tercets with light rhythm.",
+    "- style='riddle': write a concise, clever riddle encoding the meaning.",
+    "Court tone:",
+    "- 'seelie': luminous, hopeful, courtly, sunlit metaphors.",
+    "- 'unseelie': eerie, thorned, moongloom, iron, shadow-play.",
+    "Keep length within ±20% unless brevity improves clarity.",
+    "Return ONLY the rewritten text—no prefaces."
+  ].join("\n");
+
+  const userPayload = JSON.stringify({ text, theme: style, court });
+
+  const res = await fetch(OPENAI_ENDPOINT, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${OPENAI_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      model: OPENAI_MODEL,
+      input: [
+        { role: "system", content: system },
+        { role: "user",   content: userPayload }
+      ],
+      max_output_tokens: 400,
+      temperature: style === "riddle" ? 0.7 : 0.6
+    })
+  });
+
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`OpenAI ${res.status}: ${detail.slice(0, 200)}`);
+  }
+
+  const data = await res.json();
+  const out =
+    data.output_text ||
+    data.output?.[0]?.content?.[0]?.text ||
+    data.choices?.[0]?.message?.content ||
+    "";
+
+  return (out || "").trim();
+}
+
 
 // Dialogue Transformation Rules
 const dialogueTransformationRules = {
@@ -153,28 +212,25 @@ class MockOpenAIAPI {
         this.simulateDelay = true;
     }
 
-    /**
-     * Mock API call to OpenAI GPT for dialogue translation
-     * @param {string} text - Text to translate
-     * @param {string} style - Translation style (rhyming/riddle)
-     * @param {string} court - Court style (seelie/unseelie)
-     * @returns {Promise<string>} - Translated text
-     */
-    async translateDialogue(text, style, court) {
-        // Simulate API delay
-        if (this.simulateDelay) {
-            await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 400));
-        }
-
-        // Simulate occasional API failures for testing fallback
-        if (Math.random() < 0.1) { // 10% failure rate for testing
-            throw new Error('API temporarily unavailable');
-        }
-
-        // Mock GPT-style responses based on research patterns
-        const prompt = this.buildPrompt(text, style, court);
-        return this.generateMockResponse(text, style, court);
+async translateDialogue(text, style, court) {
+  if (USE_OPENAI && OPENAI_KEY) {
+    try {
+      return await callOpenAI(text, style, court);
+    } catch (err) {
+      console.warn("GPT failed, falling back:", err);
     }
+  }
+
+  // ------- fallback (your old mock/local rules) -------
+  if (this.simulateDelay) {
+    await new Promise(r => setTimeout(r, 500 + Math.random() * 600));
+  }
+  if (Math.random() < 0.10) {
+    throw new Error('API temporarily unavailable');
+  }
+  return this.generateMockResponse(text, style, court);
+}
+
 
     /**
      * Build prompt for OpenAI API (demonstrates real implementation)
