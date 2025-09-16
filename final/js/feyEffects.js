@@ -1,115 +1,5 @@
-// Fey Effects Table - Enhanced with Dice Roll Table Generation
-// Based on data from ./data/effects/fey_effects.js
-// Specifications from ./data/feature_specifications.md
-// Enhanced with D&D 5e 2024 compliant effects and dice roll table functionality
-
-// Use external fey effects data loaded from ../data/effects/fey_effects.js
-// If external data is not available, use fallback data
-const effectsData = (typeof feyEffects !== 'undefined') ? feyEffects : {
-  beneficial: [
-    // Verified effects from research
-    "You become invisible for 1 minute or until you attack or cast a spell.",
-    "You gain the ability to sense non-friendly creatures within 120 feet for 1 hour.",
-    "Your skin turns a vibrant, beautiful color of your choice for 24 hours.",
-    "You sprout butterfly wings and gain a flying speed of 30 feet for 10 minutes.",
-    "Flowers bloom in your footsteps for the next hour.",
-    "You can speak with animals for the next 24 hours.",
-    "Your voice becomes melodious, giving you advantage on Charisma checks for 1 hour.",
-    "You emit bright light in a 10-foot radius and dim light for an additional 10 feet for 1 hour.",
-    "You gain resistance to one damage type of your choice for 1 hour.",
-    "A fairy familiar appears and serves you for 24 hours.",
-    
-    // Additional beneficial effects based on research patterns
-    "You grow antlers that shed glittering dust, giving you advantage on Intimidation checks for 1 hour.",
-    "Your eyes become kaleidoscopic, granting you truesight out to 60 feet for 10 minutes.",
-    "You can walk on water for the next hour.",
-    "Healing energy surrounds you, restoring 2d4+2 hit points.",
-    "You gain the ability to cast Misty Step at will for the next 10 minutes.",
-    "Your hair becomes living vines that can manipulate objects within 5 feet.",
-    "You can breathe underwater and gain a swimming speed equal to your walking speed for 8 hours.",
-    "You grow a magnificent tail that grants you advantage on Acrobatics checks for 24 hours.",
-    "Your shadow detaches and dances around you, granting advantage on Performance checks for 1 hour.",
-    "You can cast Speak with Plants at will for the next hour."
-  ],
-  
-  neutral: [
-    // Verified effects from research
-    "You are affected by a Confusion spell for 1 minute.",
-    "A Fireball spell appears as a harmless burst of glowing fey lights.",
-    "Your appearance changes to that of a different humanoid race for 24 hours.",
-    "You can only speak in rhymes for the next hour.",
-    "Your size increases or decreases by one category for 1 hour.",
-    "You grow a beard of flowers (regardless of gender) for 24 hours.",
-    "Your voice changes to sound like a different creature type for 1 hour.",
-    "You leave glittering footprints for the next 24 hours.",
-    "Your hair changes color every minute for the next hour.",
-    "You can only communicate through song for the next 30 minutes.",
-    
-    // Additional neutral effects based on research patterns
-    "You smell strongly of a random flower for 24 hours.",
-    "Your reflection shows you as a different fey creature for 1 hour.",
-    "You cast Detect Magic at will for the next hour, but you see magic as swirling colors.",
-    "Your equipment changes color to match your mood for 24 hours.",
-    "You grow small mushrooms on your clothing that glow faintly for 8 hours.",
-    "You can taste colors and see sounds for the next hour.",
-    "Your footsteps make musical notes for the next 4 hours.",
-    "You sprout small flowers from your hair that change with the seasons for 1 week.",
-    "You can understand all languages but can only speak in questions for 1 hour.",
-    "Your tears turn into small gems worth 1 gp each for the next 24 hours."
-  ],
-  
-  challenging: [
-    // Verified effects from research including the specific "glowing skin causing disadvantage" mentioned in requirements
-    "Your skin glows brightly, causing you to have disadvantage on Stealth checks for 24 hours.",
-    "You are affected by a Slow spell for 1 minute.",
-    "You must make a DC 15 Constitution saving throw or be stunned for 1 round.",
-    "You are frightened of the nearest creature for 1 minute.",
-    "You can only move by skipping or hopping for the next hour.",
-    "You are compelled to dance whenever you hear music for 24 hours.",
-    "Your spells have a 25% chance to fail for the next hour.",
-    "You take 1d6 psychic damage and must make a Wisdom saving throw or be charmed by the nearest fey creature.",
-    "You are cursed with bad luck, causing the next attack roll, ability check, or saving throw to be made with disadvantage.",
-    "You become allergic to iron, taking 1 damage whenever you touch metal for 24 hours.",
-    
-    // Additional challenging effects based on research patterns
-    "You are polymorphed into a harmless animal for 1 hour.",
-    "You fall asleep for 1 minute and can only be awakened by taking damage.",
-    "You are affected by a Suggestion spell to perform a harmless but embarrassing action.",
-    "Your movement speed is reduced by half for 1 hour.",
-    "You have disadvantage on all attack rolls for 10 minutes.",
-    "You are blinded by swirling colors for 1 minute.",
-    "You must succeed on a DC 15 Wisdom saving throw or use your action to attack a random creature within range.",
-    "You are deafened by the sound of ethereal music for 1 hour.",
-    "You have vulnerability to one damage type (chosen randomly) for 1 hour.",
-    "You are affected by a Bestow Curse spell (DM's choice of effect) for 1 hour."
-  ],
-  
-  archfey: [
-    // Severe effects based on research patterns
-    "Reality warps around you. All creatures within 30 feet must make a DC 18 Wisdom saving throw or be transported to a random location within 1 mile.",
-    "You are banished to the Feywild for 1 minute, returning to the same space (or nearest unoccupied space).",
-    "Time moves differently for you. You age 1 year but gain the benefits of a long rest.",
-    "You swap places with a random creature within 60 feet.",
-    "An Archfey takes interest in you, marking you with their sigil (permanent until removed by Wish or similar magic).",
-    "You are affected by a Geas spell to complete a task for an Archfey.",
-    "Your memories of the last 24 hours are replaced with false memories of a fey court gathering.",
-    "You are transformed into a fey creature of the same CR for 24 hours, retaining your mental abilities.",
-    "A portal to the Feywild opens beneath your feet, and you must make a DC 20 Dexterity saving throw or fall through.",
-    "You are cursed to speak only in riddles for 7 days.",
-    
-    // Additional archfey effects based on research patterns
-    "You are affected by a modified Time Stop spell that lasts for 2 rounds but only affects you.",
-    "Your soul is temporarily bound to a fey lord, giving them the ability to scry on you at will for 30 days.",
-    "You are compelled to complete a quest for an Archfey within 30 days or suffer a permanent curse.",
-    "You gain the ability to cast one 9th-level spell of the DM's choice, but you age 10 years.",
-    "You are transformed into a living plant for 1 hour, retaining your consciousness but unable to move or speak.",
-    "An aspect of an Archfey possesses you for 10 minutes, acting through your body.",
-    "You are cursed to experience all emotions as their opposite for 7 days.",
-    "Your shadow becomes a separate entity that acts independently for 24 hours.",
-    "You are transported to a pocket dimension created by an Archfey for 1 hour of real time (which feels like 1 day to you).",
-    "You are affected by a Wish spell, but the wish is granted by a capricious Archfey with their own interpretation."
-  ]
-};
+// Fey Effects Table Generator - Uses data from ../data/effects/fey_effects.js
+// This file assumes feyEffects is already loaded from the data file
 
 /**
  * Initialize the fey effects functionality
@@ -165,20 +55,26 @@ function generateEffectsTable() {
 }
 
 /**
- * Get a list of effects for the table
+ * Get a list of effects for the table using the loaded feyEffects data
  */
 function getEffectsForTable(category, count) {
     let sourceEffects = [];
     
+    // Use the loaded feyEffects data
+    if (typeof feyEffects === 'undefined') {
+        console.error('feyEffects data not loaded');
+        return [];
+    }
+    
     if (category === 'all') {
         sourceEffects = [
-            ...effectsData.beneficial.map(effect => ({text: effect, category: 'beneficial'})),
-            ...effectsData.neutral.map(effect => ({text: effect, category: 'neutral'})),
-            ...effectsData.challenging.map(effect => ({text: effect, category: 'challenging'})),
-            ...effectsData.archfey.map(effect => ({text: effect, category: 'archfey'}))
+            ...feyEffects.beneficial.map(effect => ({text: effect, category: 'beneficial'})),
+            ...feyEffects.neutral.map(effect => ({text: effect, category: 'neutral'})),
+            ...feyEffects.challenging.map(effect => ({text: effect, category: 'challenging'})),
+            ...feyEffects.archfey.map(effect => ({text: effect, category: 'archfey'}))
         ];
     } else {
-        const categoryEffects = effectsData[category] || [];
+        const categoryEffects = feyEffects[category] || [];
         sourceEffects = categoryEffects.map(effect => ({text: effect, category: category}));
     }
     
