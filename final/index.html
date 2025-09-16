@@ -191,61 +191,50 @@ placeholder="Enter your dialogue here to transform it into fey speech..."
             </div>
         </section>
 
-        <!-- Fey Effect Table Section -->
-        <section id="section-effects" class="section hidden">
-            <div class="bg-black bg-opacity-30 backdrop-blur-md rounded-xl border border-purple-500 border-opacity-30 p-6 md:p-8">
-                <h2 class="text-3xl md:text-4xl font-bold text-center mb-8 bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent">
-                    Fey Effect Table
-                </h2>
-                
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <!-- Effect Type -->
-                    <div class="space-y-4">
-                        <h3 class="text-xl font-semibold text-purple-300">Effect Type</h3>
-                        <select id="effect-type" class="w-full bg-black bg-opacity-50 border border-purple-500 border-opacity-50 rounded-lg px-4 py-3 text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                            <option value="all">All Effects</option>
-                            <option value="beneficial">Beneficial</option>
-                            <option value="neutral">Neutral</option>
-                            <option value="challenging">Challenging</option>
-                            <option value="archfey">Archfey</option>
-                        </select>
-                    </div>
-
-                    <!-- Dice Roll Type -->
-                    <div class="space-y-4">
-                        <h3 class="text-xl font-semibold text-purple-300">Roll Method</h3>
-                        <select id="dice-type" class="w-full bg-black bg-opacity-50 border border-purple-500 border-opacity-50 rounded-lg px-4 py-3 text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                            <option value="random">Random Effect</option>
-                            <option value="d4">d4 Roll (1-4)</option>
-                            <option value="d6">d6 Roll (1-6)</option>
-                            <option value="d10">d10 Roll (1-10)</option>
-                        </select>
-                    </div>
-
-                    <!-- Number of Effects -->
-                    <div class="space-y-4">
-                        <h3 class="text-xl font-semibold text-purple-300">Number of Effects</h3>
-                        <select id="effect-count" class="w-full bg-black bg-opacity-50 border border-purple-500 border-opacity-50 rounded-lg px-4 py-3 text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500">
-                            <option value="1">1 Effect</option>
-                            <option value="2">2 Effects</option>
-                            <option value="3">3 Effects</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="text-center mb-8">
-                    <button id="roll-effects" class="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 text-white px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
-                        Roll Fey Effects
-                    </button>
-                </div>
-
-                <div id="effects-result" class="text-center">
-                    <div class="bg-black bg-opacity-50 rounded-lg p-6 border border-purple-500 border-opacity-30">
-                        <p class="text-gray-400">Click "Roll Fey Effects" to discover magical effects from the Feywild</p>
-                    </div>
-                </div>
+<!-- Fey Effect Table Section -->
+<section id="section-effects" class="section hidden">
+    <div class="bg-black bg-opacity-30 backdrop-blur-md rounded-xl border border-purple-500 border-opacity-30 p-6 md:p-8">
+        <h2 class="text-3xl md:text-4xl font-bold text-center mb-8 bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent">
+            Fey Effect Table
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Effect Type -->
+            <div class="space-y-4">
+                <h3 class="text-xl font-semibold text-purple-300">Effect Type</h3>
+                <select id="effect-type" class="w-full bg-black bg-opacity-50 border border-purple-500 border-opacity-50 rounded-lg px-4 py-3 text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <option value="all">All Effects</option>
+                    <option value="beneficial">Beneficial</option>
+                    <option value="neutral">Neutral</option>
+                    <option value="challenging">Challenging</option>
+                    <option value="archfey">Archfey</option>
+                </select>
             </div>
-        </section>
+
+            <!-- Dice Type -->
+            <div class="space-y-4">
+                <h3 class="text-xl font-semibold text-purple-300">Dice Type</h3>
+                <select id="dice-type" class="w-full bg-black bg-opacity-50 border border-purple-500 border-opacity-50 rounded-lg px-4 py-3 text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <option value="d4">d4 (4 effects)</option>
+                    <option value="d6">d6 (6 effects)</option>
+                    <option value="d10">d10 (10 effects)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="text-center mb-8">
+            <button id="roll-effects" class="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-400 hover:to-purple-500 text-white px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg">
+                Generate Effects Table
+            </button>
+        </div>
+
+        <div id="effects-result" class="text-center">
+            <div class="bg-black bg-opacity-50 rounded-lg p-6 border border-purple-500 border-opacity-30">
+                <p class="text-gray-400">Select your parameters and click "Generate Effects Table" to create a rollable table for your dice</p>
+            </div>
+        </div>
+    </div>
+</section>
     </main>
 
     <!-- Footer -->
