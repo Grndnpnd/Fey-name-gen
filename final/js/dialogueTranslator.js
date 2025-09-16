@@ -1,102 +1,124 @@
-// dialogueTranslator.js — GPT-only via /api/translate (Vercel function)
+// dialogueTranslator.js — Frontend for /api/translate (Vercel function)
 
-// --- IDs used in your HTML (adjust if yours differ) ---
-const INPUT_ID   = "translator-input";   // textarea/input for source text
-const OUTPUT_ID  = "translator-output";  // textarea for result
-const BUTTON_ID  = "translate-dialogue";      // button that triggers translation
+// Correct IDs from your HTML
+const INPUT_ID = "translator-input";
+const OUTPUT_ID = "translator-output";
+const BUTTON_ID = "translate-dialogue";
 
-// Build the system instructions; you can keep it here OR let the server use its defaultSystem()
-function buildSystemInstructions() {
-  return [
-    "You are the Dialogue Translator for a D&D Feywild tool used by a Game Master.",
-    "Your job is to REWRITE the user's text into a chosen style while preserving meaning and facts.",
-    "Do not add lore, names, or invented details. Keep intent intact.",
-    "",
-    "STYLES:",
-    "- theme='rhyming': readable couplets/tercets with light, consistent rhythm; avoid sing-song and forced rhyme.",
-    "- theme='riddle': concise, clever, solvable riddle encoding the meaning; avoid obscure references.",
-    "",
-    "COURT TONE:",
-    "- court='Seelie': luminous, hopeful, courtly; sunlit, dew, glade, gold; gentle wonder.",
-    "- court='Unseelie': eerie, thorned, moongloom; iron, shadow-play, cold starlight; elegant menace.",
-    "",
-    "LENGTH: stay within ±20% of the original text unless shorter improves clarity.",
-    "OUTPUT: return ONLY the rewritten text. No preface, no analysis, no extra lines."
-  ].join("\n");
-}
-
-// Read theme/court from your existing radio inputs
+// Read theme/court from your actual HTML radio inputs
 function getThemeAndCourtFromUI() {
-  const theme = document.querySelector('input[name="theme"]:checked')?.value || "rhyming";  // "rhyming" | "riddle"
-  const court = document.querySelector('input[name="court"]:checked')?.value || "Seelie";   // "Seelie" | "Unseelie"
+  // These match your HTML input names
+  const theme = document.querySelector('input[name="translation-style"]:checked')?.value || "rhyming";
+  const court = document.querySelector('input[name="court-style"]:checked')?.value || "seelie";
   return { theme, court };
 }
 
-// Call the secure serverless route (keeps your key off the client)
+// Call the API endpoint
 async function gptRewrite(text, theme, court) {
-  const system = buildSystemInstructions();
   const res = await fetch("/api/translate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text, theme, court, system })
+    body: JSON.stringify({ text, theme, court })
   });
 
   if (!res.ok) {
-    const msg = await res.text().catch(() => "");
-    throw new Error(`Translator API ${res.status}: ${msg.slice(0, 300)}`);
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(`API Error ${res.status}: ${errorData.error || 'Unknown error'}`);
   }
+
   const data = await res.json();
-  if (!data?.result) throw new Error("Translator API returned no result");
+  if (!data?.result) {
+    throw new Error("No result received from API");
+  }
+  
   return String(data.result).trim();
 }
 
-// Little UI helpers (safe if elements don’t exist)
-function setLoading(b) {
+// UI Helper functions
+function setLoading(isLoading) {
   const btn = document.getElementById(BUTTON_ID);
   if (btn) {
-    btn.disabled = !!b;
-    btn.textContent = b ? "Translating…" : "Translate";
+    btn.disabled = isLoading;
+    btn.textContent = isLoading ? "Transforming..." : "Transform to Fey Speech";
   }
 }
+
 function getInput() {
   const el = document.getElementById(INPUT_ID);
   return (el?.value || "").trim();
 }
+
 function setOutput(text) {
-  const el = document.getElementById(OUTPUT_ID);
-  if (el) el.value = text;
+  const outputDiv = document.getElementById(OUTPUT_ID);
+  if (outputDiv) {
+    // Create the result HTML to match your styling
+    const resultHTML = `
+      <div class="bg-black bg-opacity-50 rounded-lg p-6 border border-green-500 border-opacity-30">
+        <div class="generated-dialogue">${text}</div>
+      </div>
+    `;
+    outputDiv.innerHTML = resultHTML;
+  }
 }
 
-// Main handler (attach this to your existing button or call from main.js)
+function showError(message) {
+  const outputDiv = document.getElementById(OUTPUT_ID);
+  if (outputDiv) {
+    const errorHTML = `
+      <div class="bg-red-900 bg-opacity-50 rounded-lg p-6 border border-red-500 border-opacity-30">
+        <p class="text-red-300">${message}</p>
+      </div>
+    `;
+    outputDiv.innerHTML = errorHTML;
+  }
+}
+
+// Main translation handler
 async function translateHandler() {
   const text = getInput();
-  if (!text) return;
+  
+  if (!text) {
+    showError("Please enter some text to translate.");
+    return;
+  }
 
   const { theme, court } = getThemeAndCourtFromUI();
+  console.log("Translating with:", { text, theme, court }); // Debug log
+  
   setLoading(true);
 
   try {
-    const out = await gptRewrite(text, theme, court);
-    setOutput(out);
-  } catch (err) {
-    console.error("Dialogue translation failed:", err);
-    setOutput("[Translation error — check server logs / API key.]");
+    const result = await gptRewrite(text, theme, court);
+    setOutput(result);
+  } catch (error) {
+    console.error("Translation failed:", error);
+    showError(`Translation failed: ${error.message}`);
   } finally {
     setLoading(false);
   }
 }
 
-// Expose globally if you wire it from inline HTML or other scripts
-window.translateHandler = translateHandler;
-
-// Auto-wire button if present
-(function attach() {
-  const btn = document.getElementById(BUTTON_ID);
-  if (btn && !btn.dataset.bound) {
-    btn.addEventListener("click", (e) => {
+// Initialize the dialogue translator
+window.initializeDialogueTranslator = function() {
+  const button = document.getElementById(BUTTON_ID);
+  
+  if (button && !button.dataset.bound) {
+    button.addEventListener('click', function(e) {
       e.preventDefault();
       translateHandler();
     });
-    btn.dataset.bound = "1";
+    button.dataset.bound = "1";
+    console.log("Dialogue translator initialized"); // Debug log
   }
-})();
+};
+
+// Auto-initialize if button exists
+document.addEventListener('DOMContentLoaded', function() {
+  const button = document.getElementById(BUTTON_ID);
+  if (button && !button.dataset.bound) {
+    window.initializeDialogueTranslator();
+  }
+});
+
+// Expose for manual calling
+window.translateHandler = translateHandler;
