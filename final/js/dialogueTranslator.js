@@ -1,468 +1,102 @@
-// Dialogue Translator for Fey Speech with OpenAI GPT API Integration
-// Based on data from ./data/dialogue/transformation_rules.js
-// Specifications from ./data/feature_specifications.md
-// Enhanced with OpenAI GPT API for improved dialogue translation
-// === GPT CONFIG (hardcoded key) ===
-const USE_OPENAI = true;
+// dialogueTranslator.js — GPT-only via /api/translate (Vercel function)
 
-// 👇 Replace with your real key
-const OPENAI_KEY = "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";
+// --- IDs used in your HTML (adjust if yours differ) ---
+const INPUT_ID   = "translator-input";   // textarea/input for source text
+const OUTPUT_ID  = "translator-output";  // textarea for result
+const BUTTON_ID  = "translate-btn";      // button that triggers translation
 
-const OPENAI_ENDPOINT = "https://api.openai.com/v1/responses";
-const OPENAI_MODEL    = "gpt-4.1-mini"; // good cost/quality balance
-
-// OpenAI API Configuration (Mock Implementation)
-const OPENAI_CONFIG = {
-    // In production, this would be loaded from environment variables
-    // API_KEY: process.env.OPENAI_API_KEY,
-    API_URL: 'https://api.openai.com/v1/chat/completions',
-    MODEL: 'gpt-4',
-    MAX_TOKENS: 150,
-    TEMPERATURE: 0.8
-};
-
-async function callOpenAI(text, style, court) {
-  if (!OPENAI_KEY) throw new Error("Missing hardcoded API key");
-
-  const system = [
-    "You rewrite user text for a D&D Feywild tool.",
-    "Preserve original meaning and facts. No extra exposition.",
-    "Styles:",
-    "- style='rhyming': write readable couplets/tercets with light rhythm.",
-    "- style='riddle': write a concise, clever riddle encoding the meaning.",
-    "Court tone:",
-    "- 'seelie': luminous, hopeful, courtly, sunlit metaphors.",
-    "- 'unseelie': eerie, thorned, moongloom, iron, shadow-play.",
-    "Keep length within ±20% unless brevity improves clarity.",
-    "Return ONLY the rewritten text—no prefaces."
+// Build the system instructions; you can keep it here OR let the server use its defaultSystem()
+function buildSystemInstructions() {
+  return [
+    "You are the Dialogue Translator for a D&D Feywild tool used by a Game Master.",
+    "Your job is to REWRITE the user's text into a chosen style while preserving meaning and facts.",
+    "Do not add lore, names, or invented details. Keep intent intact.",
+    "",
+    "STYLES:",
+    "- theme='rhyming': readable couplets/tercets with light, consistent rhythm; avoid sing-song and forced rhyme.",
+    "- theme='riddle': concise, clever, solvable riddle encoding the meaning; avoid obscure references.",
+    "",
+    "COURT TONE:",
+    "- court='Seelie': luminous, hopeful, courtly; sunlit, dew, glade, gold; gentle wonder.",
+    "- court='Unseelie': eerie, thorned, moongloom; iron, shadow-play, cold starlight; elegant menace.",
+    "",
+    "LENGTH: stay within ±20% of the original text unless shorter improves clarity.",
+    "OUTPUT: return ONLY the rewritten text. No preface, no analysis, no extra lines."
   ].join("\n");
+}
 
-  const userPayload = JSON.stringify({ text, theme: style, court });
+// Read theme/court from your existing radio inputs
+function getThemeAndCourtFromUI() {
+  const theme = document.querySelector('input[name="theme"]:checked')?.value || "rhyming";  // "rhyming" | "riddle"
+  const court = document.querySelector('input[name="court"]:checked')?.value || "Seelie";   // "Seelie" | "Unseelie"
+  return { theme, court };
+}
 
-  const res = await fetch(OPENAI_ENDPOINT, {
+// Call the secure serverless route (keeps your key off the client)
+async function gptRewrite(text, theme, court) {
+  const system = buildSystemInstructions();
+  const res = await fetch("/api/translate", {
     method: "POST",
-    headers: {
-      "Authorization": `Bearer ${OPENAI_KEY}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: OPENAI_MODEL,
-      input: [
-        { role: "system", content: system },
-        { role: "user",   content: userPayload }
-      ],
-      max_output_tokens: 400,
-      temperature: style === "riddle" ? 0.7 : 0.6
-    })
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text, theme, court, system })
   });
 
   if (!res.ok) {
-    const detail = await res.text().catch(() => "");
-    throw new Error(`OpenAI ${res.status}: ${detail.slice(0, 200)}`);
+    const msg = await res.text().catch(() => "");
+    throw new Error(`Translator API ${res.status}: ${msg.slice(0, 300)}`);
   }
-
   const data = await res.json();
-  const out =
-    data.output_text ||
-    data.output?.[0]?.content?.[0]?.text ||
-    data.choices?.[0]?.message?.content ||
-    "";
-
-  return (out || "").trim();
+  if (!data?.result) throw new Error("Translator API returned no result");
+  return String(data.result).trim();
 }
 
-
-// Dialogue Transformation Rules
-const dialogueTransformationRules = {
-  rhyming: {
-    seelie: {
-      // Light, positive, nature-themed rhyming patterns
-      rhymePairs: {
-        'say': 'like flowers in May',
-        'go': 'where gentle winds blow',
-        'see': 'beneath the old oak tree',
-        'know': 'where crystal waters flow',
-        'find': 'with heart and soul kind',
-        'true': 'as morning dew',
-        'way': 'in the light of day',
-        'here': 'when spring draws near',
-        'come': 'where bees do hum',
-        'take': 'for kindness sake',
-        'light': 'in the morning bright',
-        'free': 'like birds in the tree',
-        'heart': 'where new hopes start',
-        'song': 'where we belong',
-        'dance': 'in nature\'s trance'
-      },
-      fallbackRhymes: [
-        ', so the flowers say',
-        ', where sunbeams play',
-        ', in meadows green and bright',
-        ', where fairy lights take flight',
-        ', as gentle breezes sing'
-      ]
-    },
-    
-    unseelie: {
-      // Dark, winter-themed, mysterious rhyming patterns
-      rhymePairs: {
-        'say': 'in shadows gray',
-        'go': 'where cold winds blow',
-        'see': 'in darkness deep and free',
-        'know': 'where icy rivers flow',
-        'find': 'what fate has designed',
-        'true': 'as winter\'s bitter rue',
-        'way': 'at the end of day',
-        'here': 'when night draws near',
-        'come': 'where silence has become',
-        'take': 'for sorrow\'s sake',
-        'night': 'in eternal blight',
-        'dark': 'where shadows hark',
-        'cold': 'as stories untold',
-        'fear': 'when death draws near',
-        'pain': 'like winter\'s rain'
-      },
-      fallbackRhymes: [
-        ', so the shadows whisper',
-        ', where darkness lingers',
-        ', in the depths of night',
-        ', where no light takes flight',
-        ', as winter winds sing'
-      ]
-    }
-  },
-  
-  riddle: {
-    seelie: {
-      // Light, positive riddle transformations
-      patterns: [
-        {
-          trigger: ['want', 'need', 'desire'],
-          replacement: 'seek what the heart knows but the mind cannot name'
-        },
-        {
-          trigger: ['go', 'travel', 'journey'],
-          replacement: 'follow the path where flowers bloom in your footsteps'
-        },
-        {
-          trigger: ['find', 'search', 'look'],
-          replacement: 'discover what hides in plain sight, visible only to those who believe'
-        },
-        {
-          trigger: ['help', 'aid', 'assist'],
-          replacement: 'offer what costs nothing but is worth everything'
-        },
-        {
-          trigger: ['love', 'care', 'cherish'],
-          replacement: 'hold dear what grows stronger when shared'
-        }
-      ],
-      mysticalPhrases: [
-        'What blooms in winter yet fears no frost?',
-        'What sings without voice and dances without feet?',
-        'What grows brighter when divided among many?',
-        'What is found only when not sought?',
-        'What is the treasure that increases when given away?'
-      ]
-    },
-    
-    unseelie: {
-      // Dark, mysterious riddle transformations
-      patterns: [
-        {
-          trigger: ['want', 'need', 'desire'],
-          replacement: 'crave what the shadows promise but never deliver'
-        },
-        {
-          trigger: ['go', 'travel', 'journey'],
-          replacement: 'walk the path where your footsteps echo with regret'
-        },
-        {
-          trigger: ['find', 'search', 'look'],
-          replacement: 'seek what is lost in the space between heartbeats'
-        },
-        {
-          trigger: ['help', 'aid', 'assist'],
-          replacement: 'offer what seems precious but costs more than gold'
-        },
-        {
-          trigger: ['fear', 'worry', 'dread'],
-          replacement: 'embrace what lurks in the corners of your mind'
-        }
-      ],
-      mysticalPhrases: [
-        'What withers in sunlight yet thrives in shadow?',
-        'What whispers truths that no one wants to hear?',
-        'What is gained only through loss?',
-        'What grows stronger the more it is denied?',
-        'What is the price of knowledge that should remain hidden?'
-      ]
-    }
+// Little UI helpers (safe if elements don’t exist)
+function setLoading(b) {
+  const btn = document.getElementById(BUTTON_ID);
+  if (btn) {
+    btn.disabled = !!b;
+    btn.textContent = b ? "Translating…" : "Translate";
   }
-};
-
-/**
- * Mock OpenAI API Integration
- * This demonstrates how the real API integration would work
- * In production, replace with actual API calls using your OpenAI API key
- */
-class MockOpenAIAPI {
-    constructor() {
-        this.isEnabled = true; // Set to false to always use fallback
-        this.simulateDelay = true;
-    }
-
-async translateDialogue(text, style, court) {
-  if (USE_OPENAI && OPENAI_KEY) {
-    try {
-      return await callOpenAI(text, style, court);
-    } catch (err) {
-      console.warn("GPT failed, falling back:", err);
-    }
-  }
-
-  // ------- fallback (your old mock/local rules) -------
-  if (this.simulateDelay) {
-    await new Promise(r => setTimeout(r, 500 + Math.random() * 600));
-  }
-  if (Math.random() < 0.10) {
-    throw new Error('API temporarily unavailable');
-  }
-  return this.generateMockResponse(text, style, court);
+}
+function getInput() {
+  const el = document.getElementById(INPUT_ID);
+  return (el?.value || "").trim();
+}
+function setOutput(text) {
+  const el = document.getElementById(OUTPUT_ID);
+  if (el) el.value = text;
 }
 
+// Main handler (attach this to your existing button or call from main.js)
+async function translateHandler() {
+  const text = getInput();
+  if (!text) return;
 
-    /**
-     * Build prompt for OpenAI API (demonstrates real implementation)
-     * @param {string} text - Original text
-     * @param {string} style - Translation style
-     * @param {string} court - Court style
-     * @returns {string} - Formatted prompt
-     */
-    buildPrompt(text, style, court) {
-        const courtDescription = court === 'seelie' 
-            ? 'light, benevolent, nature-loving, associated with summer and growth'
-            : 'dark, mysterious, winter-associated, cryptic and shadowy';
+  const { theme, court } = getThemeAndCourtFromUI();
+  setLoading(true);
 
-        const styleDescription = style === 'rhyming'
-            ? 'Transform the text to include rhyming elements while preserving meaning'
-            : 'Transform the text into a riddle or cryptic statement while preserving the core message';
-
-        return `You are a translator for fey speech in D&D 5e. Transform the following text for a ${court} court fey (${courtDescription}). ${styleDescription}. Keep the transformation mystical and appropriate for the Feywild setting.
-
-Original text: "${text}"
-
-Transformed text:`;
-    }
-
-    /**
-     * Generate mock response simulating GPT output
-     * @param {string} text - Original text
-     * @param {string} style - Translation style
-     * @param {string} court - Court style
-     * @returns {string} - Mock translated text
-     */
-    generateMockResponse(text, style, court) {
-        // Enhanced mock responses based on research
-        const mockResponses = {
-            rhyming: {
-                seelie: [
-                    `${text}, where sunbeams dance and flowers play`,
-                    `${text}, as gentle as the morning dew`,
-                    `${text}, where butterflies and breezes sing`,
-                    `${text}, in meadows green where hope takes wing`,
-                    `${text}, like starlight on a summer's eve`
-                ],
-                unseelie: [
-                    `${text}, where shadows whisper and darkness grows`,
-                    `${text}, as cold as winter's bitter woes`,
-                    `${text}, where moonless nights and silence reign`,
-                    `${text}, through frost and mist and icy pain`,
-                    `${text}, like echoes from forgotten dreams`
-                ]
-            },
-            riddle: {
-                seelie: [
-                    `What blooms eternal yet costs nothing to give? ${text.toLowerCase()}, for it grows stronger when shared among friends.`,
-                    `Seek what the heart knows but the mind cannot name - ${text.toLowerCase()}, found where flowers bloom in your footsteps.`,
-                    `What is visible only to those who believe? ${text.toLowerCase()}, hidden in plain sight like morning dew.`,
-                    `What sings without voice and dances without feet? ${text.toLowerCase()}, carried on wings of hope and light.`
-                ],
-                unseelie: [
-                    `What withers in sunlight yet thrives in shadow? ${text.toLowerCase()}, whispered in the spaces between heartbeats.`,
-                    `What is gained only through loss? ${text.toLowerCase()}, found where your footsteps echo with regret.`,
-                    `What grows stronger the more it is denied? ${text.toLowerCase()}, lurking in the corners of your mind.`,
-                    `What is the price of knowledge that should remain hidden? ${text.toLowerCase()}, paid in dreams you'll never remember.`
-                ]
-            }
-        };
-
-        const responses = mockResponses[style][court];
-        return responses[Math.floor(Math.random() * responses.length)];
-    }
+  try {
+    const out = await gptRewrite(text, theme, court);
+    setOutput(out);
+  } catch (err) {
+    console.error("Dialogue translation failed:", err);
+    setOutput("[Translation error — check server logs / API key.]");
+  } finally {
+    setLoading(false);
+  }
 }
 
-// Initialize mock API
-const mockOpenAI = new MockOpenAIAPI();
+// Expose globally if you wire it from inline HTML or other scripts
+window.translateHandler = translateHandler;
 
-/**
- * Initialize the dialogue translator functionality
- */
-window.initializeDialogueTranslator = function() {
-    const translateButton = document.getElementById('translate-dialogue');
-    const resultDiv = document.getElementById('dialogue-result');
-    
-    if (translateButton && resultDiv) {
-        translateButton.addEventListener('click', function() {
-            translateDialogue();
-        });
-    }
-};
-
-/**
- * Translate dialogue based on selected style and court
- * Enhanced with OpenAI GPT API integration and fallback system
- */
-async function translateDialogue() {
-    try {
-        const resultDiv = document.getElementById('dialogue-result');
-        const inputText = document.getElementById('dialogue-input').value.trim();
-        
-        if (!inputText) {
-            resultDiv.innerHTML = `
-                <div class="bg-red-900 bg-opacity-50 rounded-lg p-6 border border-red-500 border-opacity-30">
-                    <p class="text-red-300">Please enter some text to transform.</p>
-                </div>
-            `;
-            return;
-        }
-        
-        window.showLoading(resultDiv);
-        
-        // Get selected translation style
-        const styleRadios = document.querySelectorAll('input[name="translation-style"]');
-        let selectedStyle = 'rhyming';
-        for (const radio of styleRadios) {
-            if (radio.checked) {
-                selectedStyle = radio.value;
-                break;
-            }
-        }
-        
-        // Get selected court style
-        const courtRadios = document.querySelectorAll('input[name="court-style"]');
-        let selectedCourt = 'seelie';
-        for (const radio of courtRadios) {
-            if (radio.checked) {
-                selectedCourt = radio.value;
-                break;
-            }
-        }
-        
-        let transformedText;
-        let translationMethod = 'Pattern Matching'; // Default fallback method
-        
-        // Try OpenAI API first, fallback to pattern matching if it fails
-        try {
-            if (mockOpenAI.isEnabled) {
-                transformedText = await mockOpenAI.translateDialogue(inputText, selectedStyle, selectedCourt);
-                translationMethod = 'AI Enhanced';
-            } else {
-                throw new Error('API disabled');
-            }
-        } catch (apiError) {
-            console.warn('OpenAI API failed, using fallback:', apiError.message);
-            // Fallback to existing pattern matching system
-            if (selectedStyle === 'rhyming') {
-                transformedText = transformToRhyme(inputText, selectedCourt);
-            } else {
-                transformedText = transformToRiddle(inputText, selectedCourt);
-            }
-        }
-        
-        // Display result with animation delay
-        setTimeout(() => {
-            const resultHTML = `
-                <div class="bg-black bg-opacity-50 rounded-lg p-6 border border-green-500 border-opacity-30">
-                    <div class="generated-dialogue mb-4">"${transformedText}"</div>
-                    <div class="text-green-300 text-sm">
-                        ${window.capitalizeFirst(selectedStyle)} style • ${window.capitalizeFirst(selectedCourt)} Court • ${translationMethod}
-                    </div>
-                </div>
-            `;
-            window.displayResult(resultDiv, resultHTML);
-        }, 100); // Reduced delay since API already has built-in delay
-        
-    } catch (error) {
-        console.error('Translation error:', error);
-        window.handleError(error, document.getElementById('dialogue-result'), 'Failed to transform dialogue. Please try again.');
-    }
-}
-
-/**
- * Transform text to rhyming style
- */
-function transformToRhyme(text, court) {
-    const sentences = text.split(/[.!?]+/).filter(s => s.trim());
-    const rules = dialogueTransformationRules.rhyming[court];
-    
-    const transformedSentences = sentences.map(sentence => {
-        const trimmed = sentence.trim();
-        if (!trimmed) return '';
-        
-        const words = trimmed.split(' ');
-        const lastWord = words[words.length - 1].toLowerCase();
-        
-        // Find rhyming ending
-        let rhymeEnding = '';
-        for (const [key, value] of Object.entries(rules.rhymePairs)) {
-            if (lastWord.includes(key) || lastWord.endsWith(key.slice(-2))) {
-                rhymeEnding = ` ${value}`;
-                break;
-            }
-        }
-        
-        if (!rhymeEnding) {
-            rhymeEnding = getRandomElement(rules.fallbackRhymes);
-        }
-        
-        return trimmed + rhymeEnding;
+// Auto-wire button if present
+(function attach() {
+  const btn = document.getElementById(BUTTON_ID);
+  if (btn && !btn.dataset.bound) {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      translateHandler();
     });
-    
-    return transformedSentences.join(', ');
-}
-
-/**
- * Transform text to riddle style
- */
-function transformToRiddle(text, court) {
-    const rules = dialogueTransformationRules.riddle[court];
-    let transformedText = text.toLowerCase();
-    
-    // Apply pattern-based transformations
-    for (const pattern of rules.patterns) {
-        for (const trigger of pattern.trigger) {
-            const regex = new RegExp(`\\b${trigger}\\b`, 'gi');
-            if (transformedText.match(regex)) {
-                transformedText = transformedText.replace(regex, pattern.replacement);
-                break; // Only apply one transformation per sentence for clarity
-            }
-        }
-    }
-    
-    // Add mystical phrase if transformation was minimal
-    if (transformedText.toLowerCase() === text.toLowerCase()) {
-        const mysticalPhrase = getRandomElement(rules.mysticalPhrases);
-        transformedText = `${text} ${mysticalPhrase}`;
-    }
-    
-    // Capitalize first letter
-    return transformedText.charAt(0).toUpperCase() + transformedText.slice(1);
-}
-
-/**
- * Get random element from array (utility function for this module)
- */
-function getRandomElement(array) {
-    return array[Math.floor(Math.random() * array.length)];
-}
+    btn.dataset.bound = "1";
+  }
+})();
