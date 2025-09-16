@@ -3,7 +3,7 @@
 // --- IDs used in your HTML (adjust if yours differ) ---
 const INPUT_ID   = "translator-input";   // textarea/input for source text
 const OUTPUT_ID  = "translator-output";  // textarea for result
-const BUTTON_ID  = "translate-btn";      // button that triggers translation
+const BUTTON_ID  = "translate-dialogue";      // button that triggers translation
 
 // Build the system instructions; you can keep it here OR let the server use its defaultSystem()
 function buildSystemInstructions() {
